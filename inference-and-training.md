@@ -41,48 +41,10 @@ This makes the deployment dramatically smaller than equivalent 120B-Transformer 
 | **Managed Prometheus + Cloud Monitoring** | Metrics federation across both clusters | Both |
 | **Cloud Logging → BigQuery sink** | Long-term log analysis | Both |
 
-### [Figure 1] Nano-banana prompt — Shared foundation
+### [Figure 1] Shared foundation
 
-```
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream/beige background (#F5F0E8)
-with subtle grid pattern. Title at top: "Nemotron-3 on GCP — Shared
-Platform Foundation".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/db823186-9c10-4d48-a16a-c76c9fc51b25" />
 
-A single large rounded rectangle in the center labeled "GCP Project:
-nemotron-platform" contains the entire scene. Inside that, a slightly
-smaller rounded rectangle labeled "Shared VPC — us-central1, 3 zones".
-
-Inside the VPC, two side-by-side Kubernetes cluster blocks in K8s blue
-(#326CE5):
-  - LEFT: "Inference Cluster (GKE Standard)" with badge "always-on 24/7"
-  - RIGHT: "Training Cluster (GKE Standard)" with badge "on-demand bursts"
-
-Below the VPC, three horizontal "shared services" strips in GCP red/coral:
-
-Strip 1 — Artifacts (left to right):
-  - GCS bucket "nemotron-weights (multi-region)"
-  - Container icon "Artifact Registry"
-  - Database icon "Vertex AI Model Registry"
-
-Strip 2 — Identity & Secrets:
-  - Chain-link "Workload Identity"
-  - Key "Secret Manager"
-  - Lock "Cloud KMS (CMEK)"
-
-Strip 3 — Observability:
-  - Flame "Managed Prometheus"
-  - Chart "Cloud Monitoring"
-  - Stacked-logs "Cloud Logging → BigQuery"
-
-Dashed arrows from both cluster blocks down to each strip with small
-labels: "writes / reads" on artifacts, "binds" on identity, "emits" on
-observability. Subtle corner annotation: "Training writes weights;
-Inference reads them. Vertex AI Model Registry is the promotion gate."
-
-Visual rules: flat 2D, soft drop shadows, rounded corners, NVIDIA green
-only on GPU chips (none in this figure). Render each label exactly once.
-```
 
 ---
 
@@ -155,53 +117,10 @@ Model Gateway (Cloud Run × 3) → GKE Service (NEG) → NIM pods (8× H100)
 - **SLOs:** p95 first token < 500ms, p99 inter-token < 25ms, monthly availability > 99.9%
 - **Alerts:** queue-depth-high (precedes saturation), pod restart rate, p99 latency breach, GPU OOM, daily cost overrun
 
-### [Figure 2] Nano-banana prompt — Inference architecture
+### [Figure 2] Inference architecture
 
-```
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream background (#F5F0E8) with
-subtle grid. Title at top: "Nemotron-3 Inference — 2,000 Users on GKE".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/86e1c53e-361a-4806-88b4-ce079b919931" />
 
-Five horizontal layers stacked top to bottom with solid arrows between
-layers (request flow) and dashed arrows to state stores on the side.
-
-Layer 1 (edge / security, green tones):
-Laptop icon "Client" → globe "Cloud DNS" → shield "Cloud Armor (WAF +
-DDoS)" → LB icon "Global HTTPS LB (TLS, anycast)"
-
-Layer 2 (API management, purple):
-Hexagonal block "Apigee X — API keys, per-tenant quotas, billing tags"
-
-Layer 3 (application gateway, Cloud Run orange):
-Three Cloud Run service tiles side by side labeled "Model Gateway × 3
-(Cloud Run) — SSE proxy, session-affinity routing, cost tracking"
-
-Layer 4 (GKE inference plane, large K8s blue rectangle taking 50% of
-canvas):
-Top of rectangle: "GKE Standard Cluster — us-central1 (3 zones, private)"
-Inside: three vertical zone columns. In each column, ONE LARGE pod card
-labeled "NIM Pod" containing 8 small NVIDIA-green (#76B900) H100 chips
-arranged in a 2x4 grid with label "8× H100 TP=8 (NVLink)". A small badge
-above the row: "Nemotron-3 Super 120B-A12B (NVFP4) · 2 baseline → 4 HPA".
-Left side of cluster: GCS-FUSE CSI icon with sidecar file-cache label
-"+ 6.2TB local NVMe cache". Right side: chain icon labeled "Workload
-Identity → GSA: nemotron-gsa". Bottom: small gauge "HPA: vllm queue
-depth" and circle "PDB minAvail=2".
-
-Layer 5 (state + storage, GCP red row):
-Six cylinder/bucket icons: Cloud KMS (key), GCS Multi-Region (weights),
-Artifact Registry (NIM cache), Memorystore (Redis), Firestore (chat
-history), BigQuery (logs + analytics).
-
-Right-side observability rail (vertical, dashed connections to gateway
-and GKE): Managed Prometheus → Cloud Monitoring → Cloud Logging →
-Cloud Trace.
-
-Visual rules: K8s blue (#326CE5) for cluster, GCP red/coral for state,
-purple for Apigee, Cloud Run orange for gateway, NVIDIA green only on
-GPU chips. Solid bold arrows for request flow (top to bottom); dashed
-arrows for state and observability. Render each label exactly once.
-```
 
 ---
 
@@ -270,101 +189,15 @@ Multi-node distributed training is bottlenecked by gradient sync (NCCL `All-Redu
 
 **VPC architecture required:** one primary VPC + 8 secondary VPCs (one per GPU NIC). GKE configures this via Multus CNI and `NetworkAttachmentDefinitions`. The scheduler only places GPU pods on nodes where all 9 interfaces are healthy.
 
-### [Figure 3] Nano-banana prompt — Training cluster topology
+### [Figure 3] Training cluster topology
 
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "Nemotron-3 Training
-Cluster — multi-node distributed training on GKE".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/1c241e20-2df1-43b2-9313-da67f245be65" />
 
-A single large rounded rectangle in K8s blue (#326CE5) labeled at top
-"GKE Training Cluster — us-central1, single placement group, private".
 
-Inside, two horizontal node-pool sections stacked:
+### [Figure 4] Multi-NIC topology detail
 
-Top section — "system-pool (3× e2-standard-4)" with three small pills:
-  - "Kueue (queue + gang scheduling)"
-  - "JobSet API + LeaderWorkerSet"
-  - "Custom metrics adapter"
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/53bb3656-73a5-4837-ae92-dc767b7cb0ff" />
 
-Bottom section — "gpu-pool-mega (a3-megagpu-8g, autoscale 0 → 16 nodes
-via DWS Flex-start)" takes most of the canvas. FOUR node boxes side by
-side, each containing 8 small NVIDIA-green (#76B900) H100 chips in a
-2x4 grid, labeled "Node 1: 8× H100", "Node 2: 8× H100", etc. THICK
-neon-green double-arrow bars between adjacent nodes labeled "GPUDirect
-TCPXO  1.6 Tbps (8+1 multi-NIC)" — these are the visual centerpiece,
-showing the high-bandwidth interconnect glowing softly.
-
-Overlaid on the gpu-pool, semi-transparent rectangles representing one
-active training job (LeaderWorkerSet pattern):
-  - "leader pod (rank 0)" overlapping leftmost GPU on Node 1
-  - "worker pods (ranks 1-7)" spanning rest of Node 1
-  - "worker pods (ranks 8-15)" spanning Node 2
-  - "worker pods (ranks 16-23)" spanning Node 3
-  - "worker pods (ranks 24-31)" spanning Node 4
-  - Badge above: "NeMo + Megatron, FSDP / ZeRO-3, TP=8 PP=4"
-
-Outside the cluster on the right edge, GCP-red icons connected by
-dashed arrows to the leader pod:
-  - GCS bucket "training dataset (streaming via Mosaic / WebDataset)"
-  - Cylinder "Filestore High Scale (RWX NFS, 25 GB/s write)"
-  - GCS bucket "checkpoint cold archive"
-
-Below the cluster: Vertex AI Model Registry icon with dashed arrow from
-checkpoint archive labeled "promotion path → inference cluster".
-
-Right edge observability fan-out: dashed arrows from leader to small
-icons labeled "Managed Prometheus + TensorBoard" and "W&B / Vertex AI
-Experiments".
-
-Visual rules: K8s blue for cluster boundaries, NVIDIA green ONLY on GPU
-chips and the interconnect bars (which should glow softly), GCP red/coral
-for storage and registry, soft drop shadows. Compact placement implied
-by the dense node arrangement. Render each label exactly once.
-```
-
-### [Figure 4] Nano-banana prompt — Multi-NIC topology detail
-
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "GPUDirect TCPXO
-Multi-NIC Topology — a3-megagpu-8g node".
-
-Center the diagram on a SINGLE large rounded rectangle labeled "GKE Pod:
-PyTorch Training Worker (rank N)". Inside the pod box, on the left,
-stack 9 horizontal labeled lines representing network interfaces:
-
-  eth0   "Primary VPC (10.0.0.0/16) → Cluster control, git, Docker pull"
-  net1   "GPU VPC 1 (192.168.1.0/24) → GPU 0 / gVNIC 1"
-  net2   "GPU VPC 2 (192.168.2.0/24) → GPU 1 / gVNIC 2"
-  net3   "GPU VPC 3 (192.168.3.0/24) → GPU 2 / gVNIC 3"
-  net4   "GPU VPC 4 (192.168.4.0/24) → GPU 3 / gVNIC 4"
-  net5   "GPU VPC 5 (192.168.5.0/24) → GPU 4 / gVNIC 5"
-  net6   "GPU VPC 6 (192.168.6.0/24) → GPU 5 / gVNIC 6"
-  net7   "GPU VPC 7 (192.168.7.0/24) → GPU 6 / gVNIC 7"
-  net8   "GPU VPC 8 (192.168.8.0/24) → GPU 7 / gVNIC 8"
-
-On the right side of the pod, 8 NVIDIA-green (#76B900) H100 GPU chips
-in a 2x4 grid. Each GPU has a thick green arrow connecting to its
-matching gVNIC interface on the left (GPU 0 → net1, GPU 1 → net2, etc.)
-labeled "GPUDirect TCPXO (kernel-bypass)".
-
-Above the pod, a small "Multus CNI + NetworkAttachmentDefinitions"
-badge.
-
-Below the pod, dashed thick arrows fanning out to peer training pods
-on other nodes, all converging through a faint cloud labeled "Compact
-Placement — same network spine, 1.6 Tbps aggregate".
-
-A small annotation in the corner: "Each gVNIC = 200 Gbps. 8 NICs × 200
-Gbps = 1.6 Tbps inter-node clustering bandwidth. Bypasses host kernel
-and CPU."
-
-Visual rules: K8s blue for pod boundary, NVIDIA green for GPU chips and
-the 8 high-bandwidth arrows, GCP coral/orange for the multus + CNI
-labels, neutral gray for the primary management NIC. Render each label
-once. Sans-serif, readable.
-```
 
 ---
 
@@ -383,55 +216,10 @@ Training and inference have different I/O profiles. The storage hierarchy serves
 
 **Training uses:** GCS for dataset shards (streamed via Mosaic / WebDataset), Filestore High Scale for checkpoints. A 1.92TB full state dump completes in under 80 seconds at 25 GB/s — async checkpointing keeps GPU utilization above 95%.
 
-### [Figure 5] Nano-banana prompt — Storage hierarchy
+### [Figure 5] Storage hierarchy
 
-```
-Create a flat-design vector diagram, 16:9 landscape, soft cream background
-(#F5F0E8) with subtle grid. Title at top: "Storage Hierarchy — Inference
-and Training I/O Profiles".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/2b19d5d8-e16b-497a-9aab-3cfce0dba752" />
 
-A vertical four-tier stack on the left, each tier a horizontal rounded
-rectangle in increasingly warm colors (cool at top = cold storage, warm
-at bottom = hot storage):
-
-Tier 1 (top, gray-blue, "COLD"):
-  GCS Multi-regional buckets labeled "Source datasets, model weights
-  distribution, checkpoint archive". Annotation: "moderate throughput,
-  cheapest tier"
-
-Tier 2 (light blue, "WARM READ"):
-  GCS-FUSE CSI + local NVMe SSD icon labeled "6.2 TB local SSD cache
-  per a3 node". Annotation: "high throughput, near-free, automatic
-  read cache for weights and dataset shards"
-
-Tier 3 (light orange, "HOT READ/WRITE"):
-  Filestore High Scale icon labeled "Parallel NFS (pNFS) - RWX mount".
-  Annotation: "25 GB/s write, 40 GB/s read - multi-node checkpoints
-  in under 80 seconds"
-
-Tier 4 (bottom, light red, "EXTREME"):
-  Parallelstore (managed Lustre) icon. Annotation: "100+ GB/s, expensive,
-  use only when Filestore is the bottleneck"
-
-On the RIGHT half of the canvas, two columns showing which workload
-uses which tier:
-
-LEFT column (K8s blue header "INFERENCE"):
-  Solid arrows from a "NIM inference pod" icon to:
-    - Tier 1 (initial weight pull, label "1x at first boot")
-    - Tier 2 (warm read cache, label "subsequent restarts")
-
-RIGHT column (K8s blue header "TRAINING"):
-  Solid arrows from a "Training pod (LWS leader)" icon to:
-    - Tier 1 (dataset source + checkpoint archive, label "stream + sync")
-    - Tier 2 (dataset shard cache, label "streaming reads")
-    - Tier 3 (active checkpoints, label "async write every 1000 steps")
-
-Visual rules: GCP red/coral for storage cylinders, K8s blue for pod
-icons, NVIDIA green only if showing GPU chips in pods (optional).
-Solid arrows for primary I/O, dashed for tier-to-tier promotion. Render
-each label exactly once.
-```
 
 ---
 
@@ -452,50 +240,10 @@ The Vertex AI Model Registry is the source of truth for "which checkpoint is pro
 9. Blue/green rollout to 100% via Service label switch
 10. `v23` serving production; previous `v22` Deployment kept alive for instant rollback
 
-### [Figure 6] Nano-banana prompt — Promotion lifecycle (horizontal timeline)
+### [Figure 6] Promotion lifecycle (horizontal timeline)
 
-```
-Create a flat-design vector horizontal timeline diagram, 16:9 landscape,
-soft cream background (#F5F0E8) with subtle grid. Title at top:
-"Nemotron-3 Model Promotion — train → eval → register → serve".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/5db0164d-3de9-47e0-97b3-9e1a73c6baac" />
 
-Horizontal swim-lane structure with 5 rows stacked top to bottom (each
-row a different gently tinted background band):
-
-Row 1 (light blue): "ML Engineer" — person icon on far left
-Row 2 (light green): "Kueue + DWS (training queue)"
-Row 3 (K8s blue): "Training Cluster (NeMo + Megatron on 32× H100)"
-Row 4 (GCP red/coral): "GCS weights + Vertex AI Model Registry"
-Row 5 (bottom, K8s blue): "Inference Cluster (Cloud Deploy canary)"
-
-A THICK CURVED ORANGE RIBBON weaves through these rows left to right,
-with 10 numbered white circles (bold orange numbers) representing steps:
-
-  1 (Row 1)  ML Engineer submits JobSet (NeMo SFT)
-  2 (Row 2)  Kueue + DWS waits for 32× H100, admits when cohort ready
-  3 (Row 3)  SFT runs 3 days, async checkpointing every 1000 steps
-  4 (Row 4)  Final checkpoint v23 archived in GCS
-  5 (Row 1)  ML Engineer triggers eval pipeline
-  6 (Row 3)  Eval (small GPU pool): MMLU + HellaSwag + internal evals
-  7 (Row 4)  v23 registered in Vertex AI Model Registry with scores
-  8 (Row 1)  Manual approval gate — promote v23 to "prod-candidate"
-  9 (Row 5)  Canary: v23 pod takes 5% traffic for 30 min soak
- 10 (Row 5)  Blue/green rollout to 100% (Service label switch)
-
-Below swim lanes, small legend: "Orange ribbon = promotion flow. White
-numbered circles = ordered steps. Time progresses left to right
-(~4 days end-to-end)."
-
-Annotations off to the side at relevant steps:
-  - Near step 2: small Kueue + DWS logos with "gang-scheduled, Flex-start"
-  - Near step 3: small NVIDIA green GPU chip cluster
-  - Near step 8: small lock icon "manual approval gate"
-  - Near step 9: small chart "p95 latency + completion quality monitored"
-
-Visual rules: orange ribbon dominant; numbered white circles standing
-out; swim lanes are subtle background tints. No 3D, no neon. Sans-serif
-labels, readable from a slide projection. Render each label exactly once.
-```
 
 ---
 
