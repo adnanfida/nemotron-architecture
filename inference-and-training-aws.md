@@ -25,6 +25,27 @@ This is the same on AWS as GCP — the model architecture (hybrid Mamba-2 + sele
 
 This makes the deployment dramatically smaller than equivalent 120B-Transformer architectures.
 
+### Sizing math (for engineers verifying)
+
+Static weight memory ($M_{weights}$): $N$ parameters × bytes per parameter
+
+| Precision | Bytes/param | Weight VRAM (120B) | Per-GPU at TP=8 |
+|---|---|---|---|
+| BF16 | 2 | 240 GB | 30 GB |
+| FP8 | 1 | 120 GB | 15 GB |
+| NVFP4 | 0.5 | 60 GB | 7.5 GB |
+
+KV cache for the attention layers (Grouped Query Attention):
+$M_{KV} = 2 × B × C × L_{attn} × H_{kv} × D_{head} × P$
+where $B$ = batch (concurrent streams), $C$ = context length, $L_{attn}$ = number of attention layers (~16 in Nemotron-3), $H_{kv}$ = KV heads (2), $D_{head}$ = head dim (128), $P$ = precision bytes.
+
+At $B$=200, $C$=3000, FP8 KV: $M_{KV} ≈ 9.83$ GB.
+
+SSM cache for Mamba-2 layers (does NOT scale with $C$):
+$M_{SSM} = B × L_{mamba} × 2 × D_{model} × D_{state} × P$ — fixed size per batch, independent of context length.
+
+Cumulative runtime cache (KV + SSM + framework overhead) at 200 concurrent ≈ 15 GB, vs ~440 GB per-node headroom after weights → ~30× headroom. Compute, not memory, bounds concurrency on Nemotron-3.
+
 ---
 
 ## 2. Shared AWS account foundation
@@ -107,6 +128,19 @@ label exactly once.
 
 **Stick with the dense path on AWS.** AWS doesn't offer a 2-GPU H100 instance — the H100 SKUs jump from "none" to "p5.48xlarge (8× H100)." This is fine because Mamba's per-replica capacity is huge.
 
+**p5.48xlarge full specs (for reference):**
+
+| Component | Spec |
+|---|---|
+| GPUs | 8× NVIDIA H100 80GB SXM5 |
+| GPU interconnect | NVLink + 3rd-gen NVSwitch, 3.6 TB/s bidirectional per GPU |
+| vCPUs | 192 (AMD EPYC 7R13) |
+| System memory | 2,048 GiB |
+| Instance-store NVMe | 30.4 TB (8× 3.84 TB local SSD) |
+| EFA cards | 32 |
+| EFA aggregate bandwidth | 3,200 Gbps |
+| EBS bandwidth | 80 Gbps |
+
 ### Edge → routing → inference
 
 ```
@@ -136,10 +170,12 @@ EKS Service (ALB target type IP) → NIM pods (8× H100)
 | Target | queue depth < 4 per replica | |
 | PDB | `minAvailable: 2` | Tolerates rolling updates without HA floor breach |
 | Topology spread | 3-AZ, maxSkew=1 via `topologySpreadConstraints` | At least one replica per AZ |
-| Weights mount | **Mountpoint for S3 CSI driver + instance-store NVMe** (30TB local SSD per P5 node) | Warm replicas don't re-read from S3 on restart |
+| Weights mount | **Mountpoint for S3 CSI driver + instance-store NVMe** (30.4 TB local SSD per p5.48xlarge) | Warm replicas don't re-read from S3 on restart |
 | Probes | startupProbe 30-min grace, readiness, liveness | Weight load takes 5–15 min on first boot |
 | Service | ClusterIP + ALB target type IP annotation | Container-native LB targeting |
 | Session affinity | ALB sticky cookie OR header-based via gateway | KV-cache prefix reuse on attention layers |
+| Pod security context | `capabilities: add: ["IPC_LOCK"]` | Required to lock memory pages for EFA RDMA |
+| Container image alternative | AWS Deep Learning Container (`763104351884.dkr.ecr.us-east-1.amazonaws.com/huggingface-pytorch-inference:latest`) | Alternative to pulling NIM from nvcr.io directly |
 
 ### Inference cluster topology details
 
@@ -280,7 +316,15 @@ This is where AWS is **operationally much simpler than GCP**. GCP requires Multu
 
 **UltraClusters** are AWS's pre-configured P5 racks with all-to-all 3,200 Gbps EFA. Requesting capacity via Capacity Blocks routinely lands you in an UltraCluster automatically.
 
-**No Multus, no secondary VPCs, no per-GPU NIC binding.** One EFA-enabled ENI per node, NCCL handles the rest.
+**Pod-to-NIC binding pattern:**
+
+- Each p5.48xlarge has **1 primary ENI** (for cluster traffic) + **32 EFA-only network interfaces** (for GPU comms)
+- The **AWS EFA Kubernetes Device Plugin** exposes EFA cards as the `vpc.amazonaws.com/efa` extended resource
+- Pods request EFA via `resources.limits.vpc.amazonaws.com/efa: "32"` in the pod spec
+- Pods also need `securityContext.capabilities.add: ["IPC_LOCK"]` to lock memory pages
+- **Multus CNI** is used when a pod needs multiple EFA interfaces explicitly assigned (e.g., multi-pod-per-node patterns); for the standard one-training-pod-per-node case, the EFA Device Plugin alone handles it
+
+Compared to GCP's GPUDirect TCPXO setup (which requires Multus + 8 secondary VPCs with per-GPU subnet bindings regardless of pod density), AWS is simpler: standard VPC subnets, EFA handled as a device-plugin resource. Multus only enters when you need fine-grained per-pod NIC assignment.
 
 ### [Figure 3] Nano-banana prompt — Training cluster topology on AWS
 
@@ -377,26 +421,26 @@ Sans-serif, readable.
 
 ## 5. Storage hierarchy
 
-Different model than GCP but similar tiering principle.
+Different model than GCP but similar tiering principle. **The killer feature: FSx for Lustre + GPUDirect Storage (GDS) over EFA** — added in Nov 2024 and a major performance advantage over the GCP path.
 
 | Tier | Service | Throughput | Cost | Used for |
 |---|---|---|---|---|
 | **Cold archive** | Amazon S3 (Standard or Intelligent-Tiering) | Moderate | Cheapest | Source datasets, checkpoint archive, model weights distribution |
-| **Hot read cache** | **Mountpoint for S3 CSI driver + instance-store NVMe** (30TB per P5 node) | High | Near-free | Inference weight cache, training dataset shards (read-mostly) |
-| **Hot read/write** | **Amazon FSx for Lustre (Scratch SSD, with S3 linkage)** | Up to 1 TB/s aggregate | Medium-high | Multi-node training checkpoint writes; dataset hot tier |
-| **Hot read/write extreme** | FSx for Lustre Persistent SSD (large instances) | Even higher | Expensive | Only for the largest jobs |
+| **Hot read cache** | **Mountpoint for S3 CSI driver + instance-store NVMe** (30.4 TB per p5.48xlarge) | High | Near-free | Inference weight cache, training dataset shards (read-mostly) |
+| **Hot read/write** | **Amazon FSx for Lustre (Scratch SSD) + EFA + GDS, with S3 linkage** | **Up to 1,200 Gbps per client (~150 GB/s)** | Medium-high | Multi-node training checkpoint writes; dataset hot tier |
+| **Hot read/write extreme** | FSx for Lustre Persistent SSD (largest sizes) | Even higher aggregate | Expensive | Only for the largest jobs |
 
-### The killer feature: FSx for Lustre S3 linkage
+### Two killer features layered together
 
-FSx for Lustre can be **linked to an S3 bucket**:
-- Files in S3 appear as lazy-loaded entries in the FSx filesystem
-- First read pulls from S3 into FSx; subsequent reads hit FSx at full Lustre throughput
-- Writes can be flushed back to S3 periodically (or on-demand)
-- This makes datasets effectively live in S3 while training I/O happens at Lustre speeds
+**1. FSx for Lustre + S3 linkage** — files in S3 appear as lazy-loaded entries in the FSx filesystem. First read pulls from S3 into FSx; subsequent reads hit FSx at full Lustre throughput. Writes flush back to S3 periodically or on-demand. Datasets effectively live in S3 while training I/O happens at Lustre speeds.
 
-**Inference uses:** S3 for weights + instance-store NVMe cache via Mountpoint for S3 CSI driver. Each P5 has 30TB local NVMe, plenty to cache the ~60GB weight set with massive room to spare for ephemeral state.
+**2. FSx for Lustre + EFA + NVIDIA GPUDirect Storage (GDS)** — announced Nov 2024. GDS establishes a direct data path between the parallel FSx filesystem and H100 GPU memory, **bypassing host CPU and system RAM**. Delivers up to **1,200 Gbps per client instance** (~150 GB/s). For a p5.48xlarge with 32 EFA cards, this lights up the full network fabric for storage I/O.
 
-**Training uses:** S3 for dataset shards (lazy-loaded into FSx Lustre via linkage), FSx for Lustre Scratch for active checkpoint writes. A 1.92TB full state dump completes in under 2 seconds at 1 TB/s — async checkpointing keeps GPU utilization above 95%.
+**Performance implication:** a 1.92 TB full training state dump completes in ~13 seconds at 1.2 Tbps. Async checkpointing keeps GPU utilization above 95% even on frequent checkpoint cadence. This is a meaningful advantage over the GCP Filestore High Scale path (25 GB/s write, ~80 seconds for the same dump).
+
+**Inference uses:** S3 for weights + instance-store NVMe cache via Mountpoint for S3 CSI driver. Each p5.48xlarge has 30.4 TB local NVMe, plenty to cache the ~60GB weight set with massive room to spare for ephemeral state. GDS-on-FSx isn't needed for inference (read-mostly, smaller volumes).
+
+**Training uses:** S3 for dataset shards (lazy-loaded into FSx Lustre via linkage), FSx for Lustre Scratch with EFA+GDS for active checkpoint writes and dataset hot tier.
 
 ### [Figure 5] Nano-banana prompt — AWS storage hierarchy
 
@@ -421,9 +465,10 @@ Tier 2 (light blue, "WARM READ"):
   dataset shards"
 
 Tier 3 (light orange, "HOT READ/WRITE"):
-  Amazon FSx for Lustre cylinder labeled "Scratch SSD tier, with S3
-  linkage (lazy-load + flush-back)". Annotation: "up to 1 TB/s
-  aggregate - multi-node checkpoints in under 2 seconds"
+  Amazon FSx for Lustre cylinder labeled "Scratch SSD tier + EFA + GDS,
+  with S3 linkage (lazy-load + flush-back)". Annotation: "up to 1,200
+  Gbps per client (~150 GB/s) - GPUDirect Storage bypasses host CPU
+  and system RAM, 1.92 TB checkpoint dump in ~13 seconds"
 
 Tier 4 (bottom, light red, "EXTREME"):
   FSx for Lustre Persistent SSD (largest size) icon. Annotation:
@@ -587,7 +632,14 @@ Note: AWS P5 list pricing is roughly comparable to GCP a3-highgpu-8g on-demand, 
 
 4. **NeMo vs Megatron-LM vs HuggingFace?** NeMo for Nemotron (same as GCP doc). HuggingFace + Accelerate works for LoRA but not the MoE + Mamba hybrid in full-parameter training.
 
-5. **API Gateway vs ALB-direct for SSE?** **ALB-direct** for the streaming path (no 29-second timeout limitation). API Gateway is fine for non-streaming endpoints (e.g., model metadata, admin APIs). The Cloud Run / ECS Fargate gateway sits in front of EKS regardless.
+5. **API Gateway vs ALB-direct for SSE?** **ALB-direct** for the streaming path (no 29-second timeout limitation). API Gateway is fine for non-streaming endpoints (e.g., model metadata, admin APIs). The ECS Fargate gateway sits in front of EKS regardless.
+
+5a. **Human-user auth: IAM Identity Center vs Cognito vs AWS Verified Access?** Use case decides:
+    - **IAM Identity Center** (formerly SSO) — internal tools, employee OAuth via your corporate IdP, ALB OIDC integration
+    - **Amazon Cognito** — B2C user signup, social login, user pools, hosted UI
+    - **AWS Verified Access** — zero-trust application access without VPN, integrates with IdP + device trust providers; newest of the three, best for sensitive internal apps
+
+5b. **Kueue vs AWS Batch for training queue?** **Kueue** for new builds — K8s-native, more flexibility, matches the GCP path for cross-cloud consistency. **AWS Batch** if your org already runs Batch and wants unified queue management across EKS + EC2; it can use EKS as an execution environment.
 
 6. **ElastiCache (Redis) vs DynamoDB for sessions?** ElastiCache for hot session-affinity hints (sub-millisecond, in-memory). DynamoDB for durable conversation history. Use both, different jobs.
 
@@ -636,7 +688,7 @@ Quick reference for engineers translating between clouds.
 | Workload Identity (K8s SA ↔ cloud SA) | Workload Identity (KSA → GSA) | IRSA (KSA annotated with IAM role) |
 | Object storage | GCS | S3 |
 | Object storage CSI | GCS-FUSE CSI driver | Mountpoint for S3 CSI driver |
-| HPC filesystem | Filestore High Scale / Parallelstore | FSx for Lustre (with S3 linkage) |
+| HPC filesystem | Filestore High Scale / Parallelstore | FSx for Lustre (with S3 linkage + EFA + GDS) |
 | Container registry | Artifact Registry | ECR |
 | Secrets | Secret Manager | AWS Secrets Manager |
 | Key management | Cloud KMS | AWS KMS |
