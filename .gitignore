@@ -1,0 +1,23 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code workspace state
+.claude/
+
+# Temporary / scratch
+.tmp/
+tmp/
+*.bak
+
+# Image source files (keep only the rendered jpegs in img/)
+*.psd
+*.ai
+*.sketch
+*.fig
