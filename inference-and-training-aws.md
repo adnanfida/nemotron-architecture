@@ -67,49 +67,7 @@ Cumulative runtime cache (KV + SSM + framework overhead) at 200 concurrent ≈ 1
 
 ### [Figure 1] Nano-banana prompt — Shared AWS foundation
 
-```
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream/beige background (#F5F0E8)
-with subtle grid pattern. Title at top: "Nemotron-3 on AWS — Shared
-Platform Foundation".
-
-A single large rounded rectangle in the center labeled "AWS Account:
-nemotron-platform (us-east-1)" contains the entire scene. Inside that,
-a slightly smaller rounded rectangle labeled "Shared VPC — 3 AZs:
-us-east-1a, us-east-1b, us-east-1c".
-
-Inside the VPC, two side-by-side Kubernetes cluster blocks in K8s blue
-(#326CE5):
-  - LEFT: "Inference EKS Cluster" with badge "always-on 24/7"
-  - RIGHT: "Training EKS Cluster" with badge "on-demand bursts"
-
-Below the VPC, three horizontal "shared services" strips in AWS orange:
-
-Strip 1 — Artifacts:
-  - S3 bucket icon "nemotron-weights (S3 + optional CRR)"
-  - ECR icon "Elastic Container Registry"
-  - Database icon "SageMaker Model Registry"
-
-Strip 2 — Identity & Secrets:
-  - Chain-link icon "IRSA (IAM Roles for Service Accounts)"
-  - Key icon "AWS Secrets Manager"
-  - Lock icon "AWS KMS (CMK)"
-
-Strip 3 — Observability:
-  - Flame icon "Amazon Managed Prometheus (AMP)"
-  - Chart icon "CloudWatch + Amazon Managed Grafana"
-  - Stacked-logs icon "CloudWatch Logs → S3 → Athena"
-
-Dashed arrows from both cluster blocks down to each strip with small
-labels: "writes / reads" on artifacts, "binds" on identity, "emits" on
-observability. Subtle corner annotation: "Training writes weights;
-Inference reads them. SageMaker Model Registry is the promotion gate."
-
-Visual rules: flat 2D, soft drop shadows, rounded corners, AWS service
-icons in AWS orange (#FF9900), K8s blue for cluster boundaries, NVIDIA
-green (#76B900) only on GPU chips (none in this figure). Render each
-label exactly once.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/ea237d8b-5244-43f2-a599-d21bef5d74cf" />
 
 ---
 
@@ -205,56 +163,8 @@ EKS Service (ALB target type IP) → NIM pods (8× H100)
 - **SLOs:** p95 first token < 500ms, p99 inter-token < 25ms, monthly availability > 99.9% (defined via CloudWatch Synthetics canaries + SLO API)
 - **Alerts:** queue-depth-high via AMP alerting → SNS → PagerDuty; pod restart rate via CloudWatch alarm; GPU OOM via DCGM; daily cost overrun via AWS Budgets
 
-### [Figure 2] Nano-banana prompt — Inference architecture on AWS
+### [Figure 2] Inference architecture on AWS
 
-```
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream background (#F5F0E8) with
-subtle grid. Title at top: "Nemotron-3 Inference — 2,000 Users on AWS EKS".
-
-Five horizontal layers stacked top to bottom with solid arrows between
-layers (request flow) and dashed arrows to state stores on the side.
-
-Layer 1 (edge / security, green tones):
-Laptop icon "Client" → globe "Route 53" → shield "AWS WAF + Shield" →
-CDN icon "CloudFront" → LB icon "ALB (Application Load Balancer)"
-
-Layer 2 (API management, purple):
-Hexagonal block "Amazon API Gateway — API keys, usage plans, throttles"
-with a small caveat tag: "SSE? bypass API GW direct to ALB"
-
-Layer 3 (application gateway, AWS orange #FF9900):
-Three Fargate task tiles side by side labeled "Model Gateway × 3
-(ECS Fargate) — SSE proxy, session-affinity routing, cost tracking"
-
-Layer 4 (EKS inference plane, large K8s blue rectangle taking 50% of
-canvas):
-Top of rectangle: "EKS Cluster — us-east-1 (3 AZs, private nodes,
-Karpenter-managed)"
-Inside: three vertical AZ columns. In each column, ONE LARGE pod card
-labeled "NIM Pod" containing 8 small NVIDIA-green (#76B900) H100 chips
-in a 2x4 grid with label "8× H100 TP=8 (NVLink)". Small badge above
-the row: "Nemotron-3 Super 120B-A12B (NVFP4) · 2 baseline → 4 HPA".
-Left side of cluster: Mountpoint for S3 CSI icon with sidecar label
-"+ 30TB instance-store NVMe cache". Right side: chain icon labeled
-"IRSA → IAM Role: nemotron-inference-role". Bottom: small gauge "HPA:
-vllm queue depth via AMP" and circle "PDB minAvail=2".
-
-Layer 5 (state + storage, AWS orange row):
-Six AWS service icons: AWS KMS (key), S3 (weights bucket), ECR (NIM
-cache), ElastiCache (Redis), DynamoDB (chat history), Athena (logs +
-analytics).
-
-Right-side observability rail (vertical, dashed connections to gateway
-and EKS): Amazon Managed Prometheus → CloudWatch + AMG → CloudWatch
-Logs → AWS X-Ray.
-
-Visual rules: K8s blue (#326CE5) for cluster, AWS orange (#FF9900) for
-state and AWS services, purple for API Gateway, AWS orange for Fargate
-gateway, NVIDIA green only on GPU chips. Solid bold arrows for request
-flow (top to bottom); dashed arrows for state and observability. Render
-each label exactly once.
-```
 
 ---
 
@@ -326,96 +236,14 @@ This is where AWS is **operationally much simpler than GCP**. GCP requires Multu
 
 Compared to GCP's GPUDirect TCPXO setup (which requires Multus + 8 secondary VPCs with per-GPU subnet bindings regardless of pod density), AWS is simpler: standard VPC subnets, EFA handled as a device-plugin resource. Multus only enters when you need fine-grained per-pod NIC assignment.
 
-### [Figure 3] Nano-banana prompt — Training cluster topology on AWS
+### [Figure 3] Training cluster topology on AWS
 
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "Nemotron-3 Training
-Cluster — multi-node distributed training on AWS EKS".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/d82f3ffd-d74e-4c33-960d-fb7a9d5caeb6" />
 
-A single large rounded rectangle in K8s blue (#326CE5) labeled at top
-"EKS Training Cluster — us-east-1, single Cluster Placement Group,
-private nodes".
 
-Inside, two horizontal node-pool sections stacked:
+### [Figure 4] EFA networking topology (much simpler than GCP)
 
-Top section — "system-pool (M7i instances, Karpenter-provisioned)" with
-three small pills:
-  - "Kueue (queue + gang scheduling)"
-  - "JobSet API + LeaderWorkerSet"
-  - "Custom metrics adapter (HPA on AMP metrics)"
-
-Bottom section — "gpu-pool (p5.48xlarge, Karpenter 0 → 16 nodes via
-EC2 Capacity Blocks for ML)" takes most of the canvas. FOUR node boxes
-side by side, each containing 8 small NVIDIA-green (#76B900) H100 chips
-in a 2x4 grid, labeled "Node 1: 8× H100", etc. THICK neon-green double-
-arrow bars between adjacent nodes labeled "EFA + SRD  3,200 Gbps
-(32 EFA cards per node)" — these are the visual centerpiece, glowing
-softly. A small badge above the interconnect bars: "UltraCluster
-placement".
-
-Overlaid on the gpu-pool, semi-transparent rectangles representing one
-active training job (LeaderWorkerSet pattern):
-  - "leader pod (rank 0)" overlapping leftmost GPU on Node 1
-  - "worker pods (ranks 1-7, 8-15, 16-23, 24-31)" spanning across nodes
-  - Badge above: "NeMo + Megatron, FSDP / ZeRO-3, TP=8 PP=4"
-
-Outside the cluster on the right edge, AWS-orange icons connected by
-dashed arrows to the leader pod:
-  - S3 bucket "training dataset (linked to FSx via S3 linkage)"
-  - Cylinder "Amazon FSx for Lustre (Scratch SSD, 1 TB/s aggregate)"
-  - S3 bucket "checkpoint cold archive"
-
-Below the cluster: SageMaker Model Registry icon with dashed arrow from
-checkpoint archive labeled "promotion path → inference cluster".
-
-Right edge observability fan-out: dashed arrows from leader to small
-icons labeled "Amazon Managed Prometheus + TensorBoard" and "Weights &
-Biases / SageMaker Experiments".
-
-Visual rules: K8s blue for cluster, NVIDIA green ONLY on GPU chips and
-interconnect bars (glowing softly), AWS orange (#FF9900) for storage
-and AWS services. Compact placement implied by dense node arrangement.
-Render each label exactly once.
-```
-
-### [Figure 4] Nano-banana prompt — EFA networking topology (much simpler than GCP)
-
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "AWS EFA Networking
-— p5.48xlarge with 32 EFA cards".
-
-Center the diagram on a SINGLE large rounded rectangle labeled "EKS Pod:
-PyTorch Training Worker (rank N) on p5.48xlarge". Inside the pod box,
-on the left, stack TWO horizontal labeled lines representing network
-interfaces:
-
-  eth0  "Primary ENI (VPC subnet) → Cluster control plane, ECR, S3
-         endpoints, NAT for egress"
-  efa0  "EFA-enabled ENI → 32 EFA cards, SRD (Scalable Reliable
-         Datagram), 3,200 Gbps aggregate"
-
-On the right side of the pod, 8 NVIDIA-green (#76B900) H100 GPU chips
-in a 2x4 grid. A SINGLE thick green arrow connects all 8 GPUs to the
-efa0 interface, labeled "GPUDirect RDMA via EFA (kernel-bypass)".
-
-Above the pod, a small "AWS VPC CNI + EFA k8s device plugin" badge.
-
-Below the pod, dashed thick arrows fanning out to peer training pods
-on other nodes, all converging through a faint cloud labeled
-"Cluster Placement Group / UltraCluster — all-to-all 3,200 Gbps SRD".
-
-On the side, a comparison annotation in a small panel:
-  "vs GCP GPUDirect TCPXO: AWS uses ONE EFA-enabled ENI per node, not
-  8 secondary VPCs + Multus CNI. Operationally simpler.
-  Configure NCCL with FI_PROVIDER=efa — that's it."
-
-Visual rules: K8s blue for pod boundary, NVIDIA green for GPU chips
-and the single high-bandwidth arrow, AWS orange for VPC CNI label,
-neutral gray for the management ENI. Render each label once.
-Sans-serif, readable.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/087864c1-adf6-40b0-a6a1-63a422d7795f" />
 
 ---
 
@@ -442,63 +270,10 @@ Different model than GCP but similar tiering principle. **The killer feature: FS
 
 **Training uses:** S3 for dataset shards (lazy-loaded into FSx Lustre via linkage), FSx for Lustre Scratch with EFA+GDS for active checkpoint writes and dataset hot tier.
 
-### [Figure 5] Nano-banana prompt — AWS storage hierarchy
+### [Figure 5] AWS storage hierarchy
 
-```
-Create a flat-design vector diagram, 16:9 landscape, soft cream background
-(#F5F0E8) with subtle grid. Title at top: "AWS Storage Hierarchy —
-Inference and Training I/O Profiles".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/fa0d0bc8-62c3-46d0-a3f0-a700ca92e622" />
 
-A vertical four-tier stack on the left, each tier a horizontal rounded
-rectangle in increasingly warm colors (cool at top = cold storage, warm
-at bottom = hot storage):
-
-Tier 1 (top, gray-blue, "COLD"):
-  S3 bucket icon (Standard / Intelligent-Tiering) labeled "Source
-  datasets, model weights, checkpoint archive". Annotation: "moderate
-  throughput, cheapest, eleven 9s durability"
-
-Tier 2 (light blue, "WARM READ"):
-  Mountpoint for S3 CSI icon + instance-store NVMe labeled "30 TB
-  local NVMe SSD per p5.48xlarge node". Annotation: "high throughput,
-  read-mostly, automatic cache for inference weights and training
-  dataset shards"
-
-Tier 3 (light orange, "HOT READ/WRITE"):
-  Amazon FSx for Lustre cylinder labeled "Scratch SSD tier + EFA + GDS,
-  with S3 linkage (lazy-load + flush-back)". Annotation: "up to 1,200
-  Gbps per client (~150 GB/s) - GPUDirect Storage bypasses host CPU
-  and system RAM, 1.92 TB checkpoint dump in ~13 seconds"
-
-Tier 4 (bottom, light red, "EXTREME"):
-  FSx for Lustre Persistent SSD (largest size) icon. Annotation:
-  "even higher throughput, persistent across job runs, use for
-  the largest training jobs"
-
-On the RIGHT half of the canvas, two columns showing which workload
-uses which tier:
-
-LEFT column (K8s blue header "INFERENCE"):
-  Solid arrows from a "NIM inference pod" icon to:
-    - Tier 1 (initial weight pull, label "1x at first boot")
-    - Tier 2 (warm read cache, label "subsequent restarts")
-
-RIGHT column (K8s blue header "TRAINING"):
-  Solid arrows from a "Training pod (LWS leader)" icon to:
-    - Tier 1 (dataset source + checkpoint archive, label "via FSx
-      S3 linkage")
-    - Tier 3 (active checkpoints + dataset hot tier, label "async
-      write every 1000 steps")
-
-A small callout annotation: "FSx-S3 linkage is the AWS killer feature
-- datasets effectively live in S3 while training I/O hits Lustre
-speeds."
-
-Visual rules: AWS orange (#FF9900) for storage services, K8s blue for
-pod icons, NVIDIA green only if showing GPU chips in pods (optional).
-Solid arrows for primary I/O, dashed for tier-to-tier promotion.
-Render each label exactly once.
-```
 
 ---
 
@@ -519,55 +294,9 @@ The SageMaker Model Registry is the source of truth for "which checkpoint is pro
 9. Argo Rollouts: canary pod with `v23` takes 5% traffic via ALB weighted target groups for 30-min soak
 10. Blue/green rollout to 100% via target group swap; previous `v22` kept warm for instant rollback
 
-### [Figure 6] Nano-banana prompt — Promotion lifecycle on AWS
+### [Figure 6] Promotion lifecycle on AWS
 
-```
-Create a flat-design vector horizontal timeline diagram, 16:9 landscape,
-soft cream background (#F5F0E8) with subtle grid. Title at top:
-"Nemotron-3 Model Promotion on AWS — train → eval → register → serve".
-
-Horizontal swim-lane structure with 5 rows stacked top to bottom (each
-row gently tinted):
-
-Row 1 (light blue): "ML Engineer" with person icon on far left
-Row 2 (light green): "Kueue + EC2 Capacity Blocks (training queue)"
-Row 3 (K8s blue): "Training EKS Cluster (NeMo + Megatron, 32× H100,
-                   EFA UltraCluster)"
-Row 4 (AWS orange): "S3 + SageMaker Model Registry"
-Row 5 (bottom, K8s blue): "Inference EKS Cluster (Argo Rollouts canary)"
-
-A THICK CURVED ORANGE RIBBON weaves through these rows left to right
-with 10 numbered white circles (bold orange numbers) representing steps:
-
-  1 (Row 1)  ML Engineer submits JobSet (NeMo SFT)
-  2 (Row 2)  Kueue + Capacity Blocks: wait for 32× H100 cohort, admit
-  3 (Row 3)  SFT runs 3 days, async checkpointing every 1000 steps
-  4 (Row 4)  Final checkpoint v23 written to S3 via FSx Lustre linkage
-  5 (Row 1)  ML Engineer triggers eval pipeline
-  6 (Row 3)  Eval (small GPU pool): MMLU + HellaSwag + internal evals
-  7 (Row 4)  v23 registered in SageMaker Model Registry with scores
-  8 (Row 1)  Manual approval gate — promote v23 to "Approved"
-  9 (Row 5)  Argo Rollouts: canary pod takes 5% via ALB weighted targets,
-             30-min soak
- 10 (Row 5)  Blue/green rollout to 100% (target group swap)
-
-Below swim lanes, small legend: "Orange ribbon = promotion flow. White
-numbered circles = ordered steps. Time progresses left to right
-(~4 days end-to-end). EventBridge triggers Argo Rollouts on registry
-state change."
-
-Annotations off to the side at relevant steps:
-  - Near step 2: small AWS Capacity Blocks logo with "gang-scheduled,
-    cohort allocation"
-  - Near step 3: small NVIDIA green GPU chip cluster
-  - Near step 8: small lock icon "manual approval gate"
-  - Near step 9: small chart "ALB weighted target groups + AMP metrics
-    monitored"
-
-Visual rules: orange ribbon dominant; numbered white circles standing
-out; swim lanes are subtle background tints. No 3D, no neon. Sans-serif
-labels, readable from a slide projection. Render each label exactly once.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/6692b0f8-1e68-40dc-a99a-d9e2d39ecda2" />
 
 ---
 
