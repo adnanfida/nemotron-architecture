@@ -165,6 +165,7 @@ EKS Service (ALB target type IP) → NIM pods (8× H100)
 
 ### [Figure 2] Inference architecture on AWS
 
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/98508406-9ee1-4311-a2db-b2ac30cf97cb" />
 
 ---
 
