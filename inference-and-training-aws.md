@@ -65,7 +65,7 @@ Cumulative runtime cache (KV + SSM + framework overhead) at 200 concurrent ≈ 1
 | **CloudWatch Logs + Kinesis Firehose → S3 → Athena** | Long-term log analysis (Athena = AWS equivalent of BigQuery on S3) | Both |
 | **AWS X-Ray** | Distributed tracing | Both |
 
-### [Figure 1] Nano-banana prompt — Shared AWS foundation
+### [Figure 1] Shared AWS foundation
 
 <img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/ea237d8b-5244-43f2-a599-d21bef5d74cf" />
 
