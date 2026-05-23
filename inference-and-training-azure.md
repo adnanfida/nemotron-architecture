@@ -66,48 +66,8 @@ Cumulative runtime cache (KV + SSM + framework overhead) at 200 concurrent ≈ 1
 
 ### [Figure 1] Shared Azure foundation
 
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream/beige background (#F5F0E8)
-with subtle grid pattern. Title at top: "Nemotron-3 on Azure — Shared
-Platform Foundation".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/d5c8e1c2-237e-466b-9473-e79ed77f67ba" />
 
-A single large rounded rectangle in the center labeled "Azure Subscription:
-nemotron-platform (East US 2)" contains the entire scene. Inside that, a
-slightly smaller rounded rectangle labeled "Shared VNet — 3 Availability
-Zones (Zone 1, Zone 2, Zone 3)".
-
-Inside the VNet, two side-by-side Kubernetes cluster blocks in K8s blue
-(#326CE5):
-  - LEFT: "AKS Inference Cluster" with badge "always-on 24/7"
-  - RIGHT: "AKS Training Cluster" with badge "on-demand bursts"
-
-Below the VNet, three horizontal "shared services" strips in Azure blue
-(#0078D4):
-
-Strip 1 — Artifacts:
-  - Blob icon "Azure Blob Storage (nemotron-weights, RA-GRS, CMK)"
-  - Container icon "Azure Container Registry (ACR)"
-  - Database icon "Azure ML Model Registry"
-
-Strip 2 — Identity & Secrets:
-  - Chain-link icon "AKS Workload Identity (Microsoft Entra)"
-  - Key icon "Azure Key Vault"
-  - Lock icon "Key Vault Managed HSM (CMK)"
-
-Strip 3 — Observability:
-  - Flame icon "Azure Monitor Managed Prometheus"
-  - Chart icon "Azure Managed Grafana"
-  - Stacked-logs icon "Log Analytics → Azure Data Explorer"
-
-Dashed arrows from both cluster blocks down to each strip with small
-labels: "writes / reads" on artifacts, "binds" on identity, "emits" on
-observability. Subtle corner annotation: "Training writes weights;
-Inference reads them. Azure ML Model Registry is the promotion gate."
-
-Visual rules: flat 2D, soft drop shadows, rounded corners, Azure blue
-(#0078D4) for Azure service icons, K8s blue (#326CE5) for cluster
-boundaries, NVIDIA green (#76B900) only on GPU chips (none in this
-figure). Render each label exactly once.
 ---
 
 ## 3. Inference architecture
