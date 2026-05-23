@@ -33,17 +33,21 @@ Appendix A in [`inference-and-training-azure.md`](inference-and-training-azure.m
 
 ```
                   nemotron-architecture  (this repo — design docs)
-                   ┌──────────┴──────────┐
-                  GCP                    AWS
-                   │                      │
-        ┌──────────┴──────────┐          (no impl repo yet)
-        ▼                     ▼
- nemotron-on-gke      nemotron-platform-gcp
- (exploration tool,   (production IaC,
-  YAML generator UI)   Terraform + Helm + Cloud Run)
+                   ┌──────────┬──────────┬──────────┐
+                  GCP        AWS       Azure
+                   │          │          │
+        ┌──────────┴──────┐  (no impl  (no impl
+        ▼                 ▼   repo yet)  repo yet)
+ nemotron-on-gke   nemotron-platform-gcp
+ (exploration      (production IaC,
+  tool, YAML        Terraform + Helm +
+  generator UI)     Cloud Run)
 ```
 
-Decisions documented here drive what gets implemented. When a design changes, the design doc is updated first, then a follow-up PR lands the implementation. An AWS implementation repo would mirror `nemotron-platform-gcp` (Terraform modules for VPC, EKS, IAM, data-plane, observability, API Gateway, plus Helm charts and ECS Fargate gateway).
+Decisions documented here drive what gets implemented. When a design changes, the design doc is updated first, then a follow-up PR lands the implementation. Hypothetical implementation repos for the other clouds would mirror `nemotron-platform-gcp`:
+
+- **AWS** — Terraform modules for VPC, EKS, IAM, data-plane (S3 + FSx Lustre + ElastiCache + DynamoDB), observability (AMP + AMG), API Gateway, plus Helm charts and ECS Fargate gateway
+- **Azure** — Bicep or Terraform modules for VNet, AKS, Microsoft Entra Workload Identity, data-plane (Blob + Managed Lustre + Cache for Redis + Cosmos DB), observability (Azure Monitor MSP + Managed Grafana), API Management + Application Gateway, plus Helm charts and Container Apps gateway
 
 ## License
 
