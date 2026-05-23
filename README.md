@@ -1,6 +1,6 @@
 # nemotron-architecture
 
-> Architecture design documents and diagrams for deploying NVIDIA Nemotron-3 on the public cloud (GCP and AWS).
+> Architecture design documents and diagrams for deploying NVIDIA Nemotron-3 on the public cloud (GCP, AWS, and Azure).
 
 Documentation-only repo. No code, no infrastructure. The design docs describe topology, sizing, cost models, and decision rationale. Implementation lives in separate repos per cloud.
 
@@ -17,11 +17,17 @@ Documentation-only repo. No code, no infrastructure. The design docs describe to
 
 | Document | Scope | Status |
 |---|---|---|
-| [`inference-and-training-aws.md`](inference-and-training-aws.md) | AWS inference + training on EKS, single region multi-AZ. Mirrors the GCP doc structure with AWS service mappings: Karpenter, EC2 Capacity Blocks for ML, EFA UltraClusters, FSx for Lustre with S3 linkage, SageMaker Model Registry, Argo Rollouts. Includes a GCP→AWS component mapping appendix. | Draft. Diagrams pending — nano-banana prompts inline. |
+| [`inference-and-training-aws.md`](inference-and-training-aws.md) | AWS inference + training on EKS, single region multi-AZ. Mirrors the GCP doc structure with AWS service mappings: Karpenter, EC2 Capacity Blocks for ML, EFA UltraClusters, FSx for Lustre with S3 linkage, SageMaker Model Registry, Argo Rollouts. Includes a GCP→AWS component mapping appendix. | Stable. Diagrams embedded inline via GitHub user-attachments. |
+
+### Microsoft Azure (AKS)
+
+| Document | Scope | Status |
+|---|---|---|
+| [`inference-and-training-azure.md`](inference-and-training-azure.md) | Azure inference + training on AKS, single region multi-AZ. Mirrors the GCP and AWS doc structures with Azure service mappings: ND_H100_v5, Karpenter on AKS, Azure On-Demand Capacity Reservations, NDR InfiniBand + GPUDirect RDMA, Azure Managed Lustre with Blob integration + GDS, Azure ML Model Registry, Container Apps for the Model Gateway, Argo Rollouts. Includes a three-cloud (GCP/AWS/Azure) component mapping appendix. | Draft. Diagrams pending — nano-banana prompts inline. |
 
 ### Cross-cloud
 
-Appendix B in [`inference-and-training-aws.md`](inference-and-training-aws.md#appendix-b--gcp--aws-component-mapping) is a quick GCP ↔ AWS component reference (40+ services mapped).
+Appendix A in [`inference-and-training-azure.md`](inference-and-training-azure.md#appendix-a--three-cloud-component-mapping) is the canonical three-cloud component reference (GCP / AWS / Azure side-by-side, 40+ services). Supersedes the GCP↔AWS mapping in the AWS doc.
 
 ## Relationship to implementation repos
 
