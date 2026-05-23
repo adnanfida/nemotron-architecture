@@ -66,7 +66,6 @@ Cumulative runtime cache (KV + SSM + framework overhead) at 200 concurrent ≈ 1
 
 ### [Figure 1] Shared Azure foundation
 
-```
 Create a clean technical cloud architecture diagram in flat-design vector
 illustration style, 16:9 landscape, soft cream/beige background (#F5F0E8)
 with subtle grid pattern. Title at top: "Nemotron-3 on Azure — Shared
@@ -79,26 +78,26 @@ Zones (Zone 1, Zone 2, Zone 3)".
 
 Inside the VNet, two side-by-side Kubernetes cluster blocks in K8s blue
 (#326CE5):
-  - LEFT: "AKS Inference Cluster" with badge "always-on 24/7"
-  - RIGHT: "AKS Training Cluster" with badge "on-demand bursts"
+  - LEFT: "AKS Inference Cluster" with badge "always-on 24/7"
+  - RIGHT: "AKS Training Cluster" with badge "on-demand bursts"
 
 Below the VNet, three horizontal "shared services" strips in Azure blue
 (#0078D4):
 
 Strip 1 — Artifacts:
-  - Blob icon "Azure Blob Storage (nemotron-weights, RA-GRS, CMK)"
-  - Container icon "Azure Container Registry (ACR)"
-  - Database icon "Azure ML Model Registry"
+  - Blob icon "Azure Blob Storage (nemotron-weights, RA-GRS, CMK)"
+  - Container icon "Azure Container Registry (ACR)"
+  - Database icon "Azure ML Model Registry"
 
 Strip 2 — Identity & Secrets:
-  - Chain-link icon "AKS Workload Identity (Microsoft Entra)"
-  - Key icon "Azure Key Vault"
-  - Lock icon "Key Vault Managed HSM (CMK)"
+  - Chain-link icon "AKS Workload Identity (Microsoft Entra)"
+  - Key icon "Azure Key Vault"
+  - Lock icon "Key Vault Managed HSM (CMK)"
 
 Strip 3 — Observability:
-  - Flame icon "Azure Monitor Managed Prometheus"
-  - Chart icon "Azure Managed Grafana"
-  - Stacked-logs icon "Log Analytics → Azure Data Explorer"
+  - Flame icon "Azure Monitor Managed Prometheus"
+  - Chart icon "Azure Managed Grafana"
+  - Stacked-logs icon "Log Analytics → Azure Data Explorer"
 
 Dashed arrows from both cluster blocks down to each strip with small
 labels: "writes / reads" on artifacts, "binds" on identity, "emits" on
@@ -109,8 +108,6 @@ Visual rules: flat 2D, soft drop shadows, rounded corners, Azure blue
 (#0078D4) for Azure service icons, K8s blue (#326CE5) for cluster
 boundaries, NVIDIA green (#76B900) only on GPU chips (none in this
 figure). Render each label exactly once.
-```
-
 ---
 
 ## 3. Inference architecture
@@ -204,54 +201,7 @@ Gateway backend pool) → NIM pods (8× H100)
 
 ### [Figure 2] Inference architecture on Azure
 
-```
-Create a clean technical cloud architecture diagram in flat-design vector
-illustration style, 16:9 landscape, soft cream background (#F5F0E8) with
-subtle grid. Title at top: "Nemotron-3 Inference — 2,000 Users on AKS".
-
-Five horizontal layers stacked top to bottom with solid arrows between
-layers (request flow) and dashed arrows to state stores on the side.
-
-Layer 1 (edge / security, green tones):
-Laptop icon "Client" → globe "Azure DNS" → shield "Azure Front Door
-(CDN + WAF + DDoS Protection)" → LB icon "Application Gateway"
-
-Layer 2 (API management, purple):
-Hexagonal block "Azure API Management — subscription keys, products,
-throttle policies"
-
-Layer 3 (application gateway, Azure blue #0078D4):
-Three Container Apps task tiles side by side labeled "Model Gateway × 3
-(Azure Container Apps) — SSE proxy, session-affinity routing, cost tracking"
-
-Layer 4 (AKS inference plane, large K8s blue rectangle taking 50% of
-canvas):
-Top of rectangle: "AKS Cluster — East US 2 (3 AZs, private nodes,
-Karpenter-managed)"
-Inside: three vertical AZ columns. In each column, ONE LARGE pod card
-labeled "NIM Pod" containing 8 small NVIDIA-green (#76B900) H100 chips
-in a 2x4 grid with label "8× H100 TP=8 (NVLink)". Small badge above
-the row: "Nemotron-3 Super 120B-A12B (NVFP4) · 2 baseline → 4 HPA".
-Left side of cluster: BlobFuse2 CSI icon with sidecar label "+ 3.8 TB
-instance NVMe cache". Right side: chain icon labeled "AKS Workload
-Identity → Entra App: nemotron-inference". Bottom: small gauge "HPA:
-vllm queue depth via AMP" and circle "PDB minAvail=2".
-
-Layer 5 (state + storage, Azure blue row):
-Six Azure service icons: Key Vault (key), Blob Storage (weights),
-ACR (NIM cache), Azure Cache for Redis (sessions), Cosmos DB (chat
-history), Azure Data Explorer (logs + analytics).
-
-Right-side observability rail (vertical, dashed connections to gateway
-and AKS): Azure Monitor MSP → Azure Managed Grafana → Log Analytics →
-Application Insights.
-
-Visual rules: K8s blue (#326CE5) for cluster, Azure blue (#0078D4) for
-state and Azure services, purple for API Management, Azure blue for
-Container Apps gateway, NVIDIA green only on GPU chips. Solid bold
-arrows for request flow (top to bottom); dashed arrows for state and
-observability. Render each label exactly once.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/3465772f-2c0f-4612-94de-7276ddcb1fe0" />
 
 ---
 
@@ -321,104 +271,12 @@ This is where Azure differs from both GCP (TCPXO over standard VPC) and AWS (EFA
 
 ### [Figure 3] Training cluster topology on Azure
 
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "Nemotron-3 Training
-Cluster — multi-node distributed training on AKS".
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/6911e602-20c8-4de7-bc0d-102d4872082b" />
 
-A single large rounded rectangle in K8s blue (#326CE5) labeled at top
-"AKS Training Cluster — East US 2, single Proximity Placement Group,
-private nodes".
-
-Inside, two horizontal node-pool sections stacked:
-
-Top section — "system-pool (Standard_E4s_v5 × 3, Karpenter-provisioned)"
-with three small pills:
-  - "Kueue (queue + gang scheduling)"
-  - "JobSet API + LeaderWorkerSet"
-  - "Custom metrics adapter (HPA on AMP metrics)"
-
-Bottom section — "gpu-pool (Standard_ND96isr_H100_v5, Karpenter 0 → 16
-nodes via Azure On-Demand Capacity Reservations)" takes most of canvas.
-FOUR node boxes side by side, each containing 8 small NVIDIA-green
-(#76B900) H100 chips in a 2x4 grid, labeled "Node 1: 8× H100", etc.
-THICK neon-cyan/blue double-arrow bars between adjacent nodes labeled
-"NDR InfiniBand  3,200 Gbps (8× NDR HCAs per node)" — these are the
-visual centerpiece, glowing softly. A small badge above the interconnect
-bars: "Proximity Placement Group — same InfiniBand leaf switch".
-
-Overlaid on the gpu-pool, semi-transparent rectangles representing one
-active training job (LeaderWorkerSet pattern):
-  - "leader pod (rank 0)" overlapping leftmost GPU on Node 1
-  - "worker pods (ranks 1-7, 8-15, 16-23, 24-31)" spanning across nodes
-  - Badge above: "NeMo + Megatron, FSDP / ZeRO-3, TP=8 PP=4"
-
-Outside the cluster on the right edge, Azure-blue icons connected by
-dashed arrows to the leader pod:
-  - Blob bucket "training dataset (streaming via BlobFuse2)"
-  - Cylinder "Azure Managed Lustre (Hot Checkpoints, with Blob integration)"
-  - Blob bucket "checkpoint cold archive"
-
-Below the cluster: Azure ML Model Registry icon with dashed arrow from
-checkpoint archive labeled "promotion path → inference cluster".
-
-Right edge observability fan-out: dashed arrows from leader to small
-icons labeled "Azure Monitor MSP + TensorBoard" and "Weights & Biases /
-Azure ML Experiments".
-
-Visual rules: K8s blue for cluster, NVIDIA green ONLY on GPU chips,
-Azure blue (#0078D4) for storage and Azure services, InfiniBand bars in
-soft glowing cyan/blue (matching Azure brand). Compact placement implied
-by the dense node arrangement. Render each label exactly once.
-```
 
 ### [Figure 4] InfiniBand networking topology detail
 
-```
-Create a flat-design vector technical diagram, 16:9 landscape, soft cream
-background (#F5F0E8) with subtle grid. Title at top: "Azure NDR InfiniBand
-Topology — Standard_ND96isr_H100_v5".
-
-Center the diagram on a SINGLE large rounded rectangle labeled "AKS Pod:
-PyTorch Training Worker (rank N) on Standard_ND96isr_H100_v5". Inside the
-pod box, on the left, stack 9 horizontal labeled lines representing
-network interfaces:
-
-  eth0   "Primary VNet ENI → Cluster control, ACR pull, Blob endpoint,
-          NAT for egress"
-  ib0    "NDR HCA 0 (400 Gbps) → GPU 0"
-  ib1    "NDR HCA 1 (400 Gbps) → GPU 1"
-  ib2    "NDR HCA 2 (400 Gbps) → GPU 2"
-  ib3    "NDR HCA 3 (400 Gbps) → GPU 3"
-  ib4    "NDR HCA 4 (400 Gbps) → GPU 4"
-  ib5    "NDR HCA 5 (400 Gbps) → GPU 5"
-  ib6    "NDR HCA 6 (400 Gbps) → GPU 6"
-  ib7    "NDR HCA 7 (400 Gbps) → GPU 7"
-
-On the right side of the pod, 8 NVIDIA-green (#76B900) H100 GPU chips
-in a 2x4 grid. Each GPU has a thick green arrow connecting to its
-matching IB HCA on the left labeled "GPUDirect RDMA over InfiniBand
-(kernel-bypass)". Between the GPUs, a thin label "NVLink + 4th-gen
-NVSwitch 900 GB/s intra-node mesh".
-
-Above the pod, a small "Multus CNI + AKS InfiniBand Device Plugin
-(rdma/hca: 8)" badge.
-
-Below the pod, dashed thick arrows fanning out to peer training pods on
-other nodes, all converging through a faint cloud labeled "NDR
-InfiniBand Leaf Switch — Proximity Placement Group, 3.2 Tbps per node".
-
-A small annotation panel on the side:
-  "Azure uses real Mellanox NDR InfiniBand hardware, not RoCE or TCP.
-  NCCL_IB_HCA=mlx5_ib0..7 maps GPUs 1:1 to HCAs. Traffic flows over the
-  IB fabric separately from the VNet — simpler architecture than GCP's
-  Multus + 8 VPC pattern."
-
-Visual rules: K8s blue for pod boundary, NVIDIA green for GPU chips and
-the 8 GPUDirect arrows, Azure blue (#0078D4) for the management ENI
-and the IB fabric callouts, neutral gray for the InfiniBand HCAs.
-Render each label once. Sans-serif, readable.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/c2814dd4-b7c6-4d28-9349-44ed1f6b3196" />
 
 ---
 
@@ -445,60 +303,7 @@ Different model than GCP and AWS but similar tiering. **Killer feature: Azure Ma
 
 ### [Figure 5] Azure storage hierarchy
 
-```
-Create a flat-design vector diagram, 16:9 landscape, soft cream background
-(#F5F0E8) with subtle grid. Title at top: "Azure Storage Hierarchy —
-Inference and Training I/O Profiles".
-
-A vertical four-tier stack on the left, each tier a horizontal rounded
-rectangle in increasingly warm colors (cool at top = cold storage,
-warm at bottom = hot storage):
-
-Tier 1 (top, gray-blue, "COLD"):
-  Azure Blob Storage icon (Hot or Cool tier) labeled "Source datasets,
-  model weights, checkpoint archive". Annotation: "moderate throughput,
-  cheapest, 11 9s durability with RA-GZRS"
-
-Tier 2 (light blue, "WARM READ"):
-  BlobFuse2 CSI + instance NVMe icon labeled "3.8 TB local NVMe SSD
-  per Standard_ND96isr_H100_v5". Annotation: "high throughput,
-  read-mostly, automatic cache for weights and dataset shards"
-
-Tier 3 (light orange, "HOT READ/WRITE"):
-  Azure Managed Lustre cylinder labeled "Lustre + NDR InfiniBand + GDS,
-  with Blob integration". Annotation: "150+ GB/s aggregate -
-  GPUDirect Storage bypasses host CPU and system RAM, 1.92 TB
-  checkpoint dump in ~13 seconds"
-
-Tier 4 (bottom, light red, "PREMIUM SHARED"):
-  Azure NetApp Files (Ultra tier) icon. Annotation: "NFS RWX, premium
-  pricing, fallback when Lustre doesn't fit your access pattern"
-
-On the RIGHT half of the canvas, two columns showing which workload
-uses which tier:
-
-LEFT column (K8s blue header "INFERENCE"):
-  Solid arrows from a "NIM inference pod" icon to:
-    - Tier 1 (initial weight pull, label "1× at first boot")
-    - Tier 2 (warm read cache, label "subsequent restarts")
-
-RIGHT column (K8s blue header "TRAINING"):
-  Solid arrows from a "Training pod (LWS leader)" icon to:
-    - Tier 1 (dataset source + checkpoint archive, label "via Lustre
-      Blob integration")
-    - Tier 3 (active checkpoints + dataset hot tier, label "GDS over
-      NDR IB, every 1000 steps")
-
-A small callout annotation: "Managed Lustre + Blob integration + GDS
-over IB is the Azure killer combo — datasets live in cheap Blob while
-training I/O hits Lustre speeds, with GPUs talking directly to Lustre
-controllers."
-
-Visual rules: Azure blue (#0078D4) for storage services, K8s blue for
-pod icons, NVIDIA green only if showing GPU chips in pods (optional).
-Solid arrows for primary I/O, dashed for tier-to-tier promotion.
-Render each label exactly once.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/369de056-f821-4d47-8b25-43e83147e56a" />
 
 ---
 
@@ -521,51 +326,7 @@ The Azure ML Model Registry is the source of truth for "which checkpoint is prod
 
 ### [Figure 6] Promotion lifecycle on Azure
 
-```
-Create a flat-design vector horizontal timeline diagram, 16:9 landscape,
-soft cream background (#F5F0E8) with subtle grid. Title at top:
-"Nemotron-3 Model Promotion on Azure — train → eval → register → serve".
-
-Horizontal swim-lane structure with 5 rows stacked top to bottom (each
-row gently tinted):
-
-Row 1 (light blue): "ML Engineer" with person icon on far left
-Row 2 (light green): "Kueue + Azure On-Demand Capacity Reservations"
-Row 3 (K8s blue): "AKS Training Cluster (NeMo + Megatron, 32× H100, NDR IB)"
-Row 4 (Azure blue #0078D4): "Azure Blob + Azure ML Model Registry"
-Row 5 (bottom, K8s blue): "AKS Inference Cluster (Argo Rollouts canary)"
-
-A THICK CURVED ORANGE RIBBON weaves through these rows left to right
-with 10 numbered white circles (bold orange numbers) representing steps:
-
-  1 (Row 1)  ML Engineer submits JobSet (NeMo SFT)
-  2 (Row 2)  Kueue + Capacity Reservations: wait for 32× H100, admit
-  3 (Row 3)  SFT runs 3 days, async checkpointing every 1000 steps
-  4 (Row 4)  Final checkpoint v23 written to Blob via Managed Lustre
-  5 (Row 1)  ML Engineer triggers eval pipeline
-  6 (Row 3)  Eval (small GPU pool): MMLU + HellaSwag + internal evals
-  7 (Row 4)  v23 registered in Azure ML Model Registry with scores
-  8 (Row 1)  Manual approval gate — tag v23 as "prod-candidate"
-  9 (Row 5)  Argo Rollouts: canary pod takes 5% via App Gateway weighted
-             backend, 30-min soak
- 10 (Row 5)  Blue/green rollout to 100% (backend pool swap)
-
-Below swim lanes, small legend: "Orange ribbon = promotion flow. White
-numbered circles = ordered steps. Time progresses left to right
-(~4 days end-to-end). Event Grid triggers Argo Rollouts on registry
-state change."
-
-Annotations off to the side at relevant steps:
-  - Near step 2: small Azure logo + "gang-scheduled, ND_v5 reservation"
-  - Near step 3: small NVIDIA green GPU chip cluster
-  - Near step 8: small lock icon "manual approval gate"
-  - Near step 9: small chart "App Gateway weighted backends + AMP
-    metrics monitored"
-
-Visual rules: orange ribbon dominant; numbered white circles standing
-out; swim lanes are subtle background tints. No 3D, no neon. Sans-serif
-labels, readable from a slide projection. Render each label exactly once.
-```
+<img width="1024" height="572" alt="image" src="https://github.com/user-attachments/assets/8964b226-f8e6-4c84-a541-f7270a7620fe" />
 
 ---
 
